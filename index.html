@@ -592,7 +592,7 @@
   };
   function persist(){ save("sap_res",state.restrictions); save("sap_set",state.settings); save("sap_cal",state.calib); save("sap_ctx",state.ctx); }
 
-  var rt={tracking:false,watchId:null,simTimer:null,tickTimer:null,lastTick:null,lastGoodFix:null,pendingCandM:null,pendingCount:0,srLiveTimer:null,srRouteId:null,autoCalib:false,last:null,odo:0,speed:0,posM:null,wake:null,audio:null,mirrorGen:0,fixQuality:null,zeroSpeedSince:null,zeroSpeedAnchor:null,driftSince:null,driftCandM:null,peregonCandLabel:null,peregonCandCount:0,trackMCand:null,autoCalCand:null,autoCalCount:0,trackingSince:null,activeAlert:null,lastShownAlertKey:null,ackedAlertKey:null,awaitingManualCalib:false,pendingCalibConfirm:false,accelMag:0,accelAvailable:false};
+  var rt={tracking:false,watchId:null,simTimer:null,tickTimer:null,lastTick:null,lastGoodFix:null,pendingCandM:null,pendingCount:0,srLiveTimer:null,srRouteId:null,autoCalib:false,last:null,odo:0,speed:0,posM:null,wake:null,audio:null,mirrorGen:0,fixQuality:null,zeroSpeedSince:null,zeroSpeedAnchor:null,driftSince:null,driftCandM:null,peregonCandLabel:null,peregonCandCount:0,trackMCand:null,autoCalCand:null,autoCalCount:0,trackingSince:null,activeAlert:null,lastShownAlertKey:null,ackedAlertKey:null,awaitingManualCalib:false,pendingCalibConfirm:false,accelMag:0,accelAvailable:false,lastBrowserCallAt:0};
   var MAXSPD=250;
   var $=function(s){return document.querySelector(s);};
   function metersOf(km,pk,m){ pk=+pk; if(isNaN(pk)||pk<1)pk=1; if(pk>10)pk=10; m=+m; if(isNaN(m)||m<0)m=0; if(m>99)m=99; return (+km||0)*1000+(pk-1)*100+m; }
@@ -868,6 +868,7 @@
     try{ var m=rt.posM; if(m==null)return; var txt=kmFrom(m)+" км · ПК"+pkFrom(m)+" · "+Math.round(rt.speed)+" км/ч"; if(window.Android&&window.Android.updatePosition)window.Android.updatePosition(txt); }catch(e){}
   }
   function onPos(p){ var c=p.coords,acc=c.accuracy||999;
+    rt.lastBrowserCallAt=Date.now(); // watchdog подписки - см. tickerStep
     $("#gps").className="gps "+(acc<=25?"live":"weak"); $("#gpsTxt").textContent="±"+Math.round(acc)+" м";
     var now=p.timestamp||Date.now(),pt={lat:c.latitude,lon:c.longitude,t:now};
     var dt=rt.last?Math.max(0,(now-rt.last.t)/1000):null;
@@ -1136,7 +1137,8 @@
     autoDetectPeregon(c.latitude, c.longitude, acc);
     updateAndroidNotification();
     renderTrip(); evalAlerts(); }
-  function onErr(e){ if(rt.last){ $("#spdSrc").textContent="GPS потерян — иду по счёту"; $("#spdSrc").className="src dr"; $("#gps").className="gps dead"; $("#gpsTxt").textContent="нет сигнала";
+  function onErr(e){ rt.lastBrowserCallAt=Date.now(); // watchdog подписки - см. tickerStep
+    if(rt.last){ $("#spdSrc").textContent="GPS потерян — иду по счёту"; $("#spdSrc").className="src dr"; $("#gps").className="gps dead"; $("#gpsTxt").textContent="нет сигнала";
       // КРИТИЧНО: при полной потере сигнала скорость раньше оставалась ЗАСТЫВШЕЙ на
       // последнем известном значении - если перед самой потерей был случайный шумовой
       // выброс (GPS даёт скачок скорости в момент ухудшения сигнала перед тем как пропасть
@@ -1160,8 +1162,25 @@
     var now=Date.now(), dt=(now-(rt.lastTick||now))/1000; rt.lastTick=now;
     if(dt>0&&dt<10) rt.odo+=(rt.speed/3.6)*dt;
     rt.posM=currentMeters(); renderTrip(); evalAlerts();
+    // ВОТЧДОГ ПОДПИСКИ (браузерный аналог Java watchdog в Android-приложении): если ни onPos,
+    // ни onErr вообще не вызывались браузером дольше 20 секунд - это значит сама подписка
+    // watchPosition молча "зависла" (известны такие случаи на некоторых телефонах/системах -
+    // та же категория проблем, что найдена для Samsung One UI 8 в Android-приложении).
+    // ЧЕСТНОЕ ОГРАНИЧЕНИЕ: у браузера нет способа явно выбрать "именно сетевой провайдер,
+    // не GPS" (в отличие от Java/Google Play Services, где это отдельный Priority) - браузер
+    // сам решает внутри себя, как искать позицию. Единственный доступный инструмент -
+    // полностью пересобрать саму подписку (clearWatch + новый watchPosition), это похоже на
+    // действие "выключить и включить определение местоположения", которое реально помогает
+    // пользователям при подобных системных зависаниях.
+    if(rt.tracking && rt.watchId!=null && rt.lastBrowserCallAt && (now-rt.lastBrowserCallAt)>20000){
+      try{
+        navigator.geolocation.clearWatch(rt.watchId);
+        rt.watchId=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:0,timeout:27000});
+        rt.lastBrowserCallAt=now; // не дёргаем пересборку на каждом тике, ждём ещё 20с
+      }catch(e){}
+    }
     if(IS_HEADLESS) saveTrackSnapshot(); }
-  function startTicker(){ rt.lastTick=Date.now(); if(rt.tickTimer)clearInterval(rt.tickTimer); rt.tickTimer=setInterval(tickerStep,600); }
+  function startTicker(){ rt.lastTick=Date.now(); rt.lastBrowserCallAt=Date.now(); if(rt.tickTimer)clearInterval(rt.tickTimer); rt.tickTimer=setInterval(tickerStep,600); }
   function stopTicker(){ if(rt.tickTimer){ clearInterval(rt.tickTimer); rt.tickTimer=null; } }
 
   // ========= ЗЕРКАЛИРОВАНИЕ ГОЛОВНОГО (headless) ДВИЖКА В ВИДИМЫЙ ЭКРАН =========
