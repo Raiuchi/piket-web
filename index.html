@@ -592,7 +592,7 @@
   };
   function persist(){ save("sap_res",state.restrictions); save("sap_set",state.settings); save("sap_cal",state.calib); save("sap_ctx",state.ctx); }
 
-  var rt={tracking:false,watchId:null,simTimer:null,tickTimer:null,lastTick:null,lastGoodFix:null,pendingCandM:null,pendingCount:0,srLiveTimer:null,srRouteId:null,autoCalib:false,last:null,odo:0,speed:0,posM:null,wake:null,audio:null,mirrorGen:0,fixQuality:null,zeroSpeedSince:null,zeroSpeedAnchor:null,driftSince:null,driftCandM:null,peregonCandLabel:null,peregonCandCount:0,trackMCand:null,autoCalCand:null,autoCalCount:0,trackingSince:null,activeAlert:null,lastShownAlertKey:null,ackedAlertKey:null,awaitingManualCalib:false,pendingCalibConfirm:false};
+  var rt={tracking:false,watchId:null,simTimer:null,tickTimer:null,lastTick:null,lastGoodFix:null,pendingCandM:null,pendingCount:0,srLiveTimer:null,srRouteId:null,autoCalib:false,last:null,odo:0,speed:0,posM:null,wake:null,audio:null,mirrorGen:0,fixQuality:null,zeroSpeedSince:null,zeroSpeedAnchor:null,driftSince:null,driftCandM:null,peregonCandLabel:null,peregonCandCount:0,trackMCand:null,autoCalCand:null,autoCalCount:0,trackingSince:null,activeAlert:null,lastShownAlertKey:null,ackedAlertKey:null,awaitingManualCalib:false,pendingCalibConfirm:false,accelMag:0,accelAvailable:false};
   var MAXSPD=250;
   var $=function(s){return document.querySelector(s);};
   function metersOf(km,pk,m){ pk=+pk; if(isNaN(pk)||pk<1)pk=1; if(pk>10)pk=10; m=+m; if(isNaN(m)||m<0)m=0; if(m>99)m=99; return (+km||0)*1000+(pk-1)*100+m; }
@@ -649,6 +649,44 @@
   function reqWake(){ if(!state.settings.wake||!("wakeLock"in navigator))return; navigator.wakeLock.request("screen").then(function(w){rt.wake=w;w.addEventListener("release",function(){rt.wake=null;});}).catch(function(){}); }
   function relWake(){ if(rt.wake){try{rt.wake.release();}catch(e){} rt.wake=null;} }
   document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible"&&rt.tracking)reqWake(); });
+
+  // ВСПОМОГАТЕЛЬНЫЙ АКСЕЛЕРОМЕТР — мягкая подсказка при потере/глушении GPS, НЕ замена GPS.
+  // КРИТИЧНО: не пытаемся вычислить точную скорость через интегрирование ускорения — это
+  // физически ненадёжно (ошибка накапливается со временем без GPS-коррекции, и неизвестно,
+  // какая из трёх осей телефона соответствует направлению движения поезда — зависит от того,
+  // как телефон лежит). Используем ТОЛЬКО общую величину (модуль) вектора ускорения как
+  // простой индикатор "идёт ли явное резкое изменение скорости прямо сейчас" — эта величина
+  // не зависит от ориентации телефона. Если акселерометр показывает заметное ускорение —
+  // считаем вероятным, что скорость поезда реально меняется, и НЕ применяем фильтр защиты от
+  // помех так строго в этот момент (см. onPos) — даём пройти честному резкому изменению.
+  // Если акселерометр спокоен — скорость поезда, скорее всего, не меняется сильно, можно
+  // увереннее держать последнее известное значение при потере сигнала.
+  // accelMag (текущая величина "избыточного" ускорения сверх покоя, м/с²) уже в rt выше.
+  function handleMotion(e){
+    var a=e.acceleration; // без учёта гравитации — в покое должно быть около (0,0,0)
+    if(!a||a.x==null) return;
+    rt.accelAvailable=true; // явная отметка, что хотя бы один честный замер реально пришёл
+    var mag=Math.sqrt(a.x*a.x+a.y*a.y+a.z*a.z);
+    // Лёгкое сглаживание — единичный шумовой выброс акселерометра не должен мгновенно
+    // "включать" режим повышенного доверия к резким изменениям скорости.
+    rt.accelMag=rt.accelMag*0.7+mag*0.3;
+  }
+  function startAccelHelper(){
+    if(!("DeviceMotionEvent"in window)) return; // нет такого датчика/API — просто не используем
+    try{
+      if(typeof DeviceMotionEvent.requestPermission==="function"){
+        // iOS 13+ требует явного разрешения по жесту пользователя — startTrack() вызывается
+        // по реальному тапу на кнопку Старт, это и есть подходящий момент для запроса.
+        DeviceMotionEvent.requestPermission().then(function(resp){
+          if(resp==="granted") window.addEventListener("devicemotion",handleMotion);
+        }).catch(function(){});
+      } else {
+        // Android и более старые версии iOS не требуют отдельного разрешения для этого API.
+        window.addEventListener("devicemotion",handleMotion);
+      }
+    }catch(e){}
+  }
+  function stopAccelHelper(){ try{ window.removeEventListener("devicemotion",handleMotion); }catch(e){} rt.accelMag=0; rt.accelAvailable=false; }
 
   // Единый источник направления — всегда live с главного переключателя Туда/Обратно,
   // а не замороженный снимок из момента калибровки (это и было причиной багов с разворотом счёта)
@@ -1107,7 +1145,14 @@
       // Плавно снижаем скорость к 0, честно отражая что реальная скорость неизвестна -
       // не идеально (поезд может реально ехать), но безопаснее, чем доверять застывшему
       // случайному выбросу неопределённо долго.
-      rt.speed = rt.speed*0.85;
+      //
+      // ВСПОМОГАТЕЛЬНАЯ ПОДСКАЗКА ОТ АКСЕЛЕРОМЕТРА (мягкая, не замена GPS): если он
+      // показывает низкое ускорение (поезд явно не тормозит/разгоняется прямо сейчас) -
+      // снижаем скорость МЕДЛЕННЕЕ, есть основания думать, что реальная скорость близка к
+      // последней известной. Если ускорение заметное - снижаем как раньше, не рискуя
+      // держать неактуальное значение именно в момент вероятного реального изменения скорости.
+      var decay = (rt.accelAvailable && rt.accelMag<1.5) ? 0.95 : 0.85;
+      rt.speed = rt.speed*decay;
     }
     else { $("#gps").className="gps dead"; $("#gpsTxt").textContent=(e&&e.code===1)?"нет доступа":"нет сигнала"; $("#spdSrc").textContent=(e&&e.code===1)?"GPS запрещён (file://)":"жду спутники…"; $("#spdSrc").className="src dr"; } }
 
@@ -1226,6 +1271,7 @@
       // использует, поэтому там этой проблемы не было - это специфика именно браузерного API.
       rt.watchId=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:0,timeout:27000});
     } else { toast("GPS недоступен"); rt.tracking=false; return; }
+    startAccelHelper();
     reqWake();
     startTicker();
     setTrackBtn(true); warmVoice(); toast("Отслеживание включено"); }
@@ -1269,6 +1315,7 @@
     if(rt.watchId!=null){ navigator.geolocation.clearWatch(rt.watchId); rt.watchId=null; }
     if(rt.simTimer){ clearInterval(rt.simTimer); rt.simTimer=null; }
     stopTicker();
+    stopAccelHelper();
     relWake(); rt.speed=0;
     try{ if(window.Android&&window.Android.stopTracking)window.Android.stopTracking(); }catch(e){}
     if(rt.autoCalib){ state.calib=null; rt.autoCalib=false; rt.odo=0; rt.posM=null; }
