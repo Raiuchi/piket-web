@@ -1194,7 +1194,14 @@
     try{ if(!rt.audio)rt.audio=new (window.AudioContext||window.webkitAudioContext)(); rt.audio.resume&&rt.audio.resume(); }catch(e){}
     if("geolocation"in navigator){
       // Запасной браузерный GPS — для теста вне APK
-      rt.watchId=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:2000,timeout:27000});
+      // КРИТИЧНО: maximumAge:0 - НЕ разрешаем браузеру отдавать закэшированную координату/
+      // скорость. Раньше было maximumAge:2000 (разрешали кэш до 2 секунд) - на скоростном
+      // участке поезд успевает заметно ускориться/затормозить за это время, и браузер мог
+      // отдать устаревшее значение скорости как будто свежее. Это давало непредсказуемые
+      // рваные скачки на экране (например реальные 155км/ч, а на экране 75км/ч) - сообщено
+      // напрямую с дороги. Android-приложение (FusedLocationProviderClient) такой кэш не
+      // использует, поэтому там этой проблемы не было - это специфика именно браузерного API.
+      rt.watchId=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:0,timeout:27000});
     } else { toast("GPS недоступен"); rt.tracking=false; return; }
     reqWake();
     startTicker();
