@@ -873,7 +873,7 @@
     // (точный) канал, чтобы вотчдог подписки в tickerStep продолжал пытаться его восстановить
     // даже пока запасной канал подстраховывает (та же логика, что в Android TrackingService).
     if(!fromBackup) rt.lastBrowserCallAt=Date.now(); // watchdog подписки - см. tickerStep
-    $("#gps").className="gps "+(acc<=25?"live":"weak"); $("#gpsTxt").textContent="±"+Math.round(acc)+" м";
+    $("#gps").className="gps "+(acc<=25?"live":"weak"); $("#gpsTxt").textContent=(acc<=25?"GPS вкл":"GPS слабый");
     var now=p.timestamp||Date.now(),pt={lat:c.latitude,lon:c.longitude,t:now};
     var dt=rt.last?Math.max(0,(now-rt.last.t)/1000):null;
 
