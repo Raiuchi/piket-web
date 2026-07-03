@@ -867,8 +867,12 @@
   function updateAndroidNotification(){
     try{ var m=rt.posM; if(m==null)return; var txt=kmFrom(m)+" км · ПК"+pkFrom(m)+" · "+Math.round(rt.speed)+" км/ч"; if(window.Android&&window.Android.updatePosition)window.Android.updatePosition(txt); }catch(e){}
   }
-  function onPos(p){ var c=p.coords,acc=c.accuracy||999;
-    rt.lastBrowserCallAt=Date.now(); // watchdog подписки - см. tickerStep
+  function onPos(p,fromBackup){ var c=p.coords,acc=c.accuracy||999;
+    // fromBackup=true - замер пришёл из запасного сетевого канала (см. startNetworkBackup).
+    // НЕ обновляем lastBrowserCallAt в этом случае - это поле отслеживает именно ОСНОВНОЙ
+    // (точный) канал, чтобы вотчдог подписки в tickerStep продолжал пытаться его восстановить
+    // даже пока запасной канал подстраховывает (та же логика, что в Android TrackingService).
+    if(!fromBackup) rt.lastBrowserCallAt=Date.now(); // watchdog подписки - см. tickerStep
     $("#gps").className="gps "+(acc<=25?"live":"weak"); $("#gpsTxt").textContent="±"+Math.round(acc)+" м";
     var now=p.timestamp||Date.now(),pt={lat:c.latitude,lon:c.longitude,t:now};
     var dt=rt.last?Math.max(0,(now-rt.last.t)/1000):null;
@@ -1179,6 +1183,28 @@
         rt.lastBrowserCallAt=now; // не дёргаем пересборку на каждом тике, ждём ещё 20с
       }catch(e){}
     }
+    // ЗАПАСНОЙ СЕТЕВОЙ КАНАЛ (браузерный аналог Android network backup, v1.4.29): если основной
+    // канал молчит дольше 10с - включаем второй watchPosition с enableHighAccuracy:false как
+    // подстраховку, отключаем как только основной снова заговорил. ЧЕСТНОЕ ОГРАНИЧЕНИЕ: в отличие
+    // от Android (Priority.PRIORITY_BALANCED_POWER_ACCURACY - явно "через вышки/wifi, не GPS"),
+    // у браузера нет способа явно запросить именно сетевое позиционирование - enableHighAccuracy:
+    // false лишь просьба "не обязательно GPS-точность", решение всё равно за браузером/ОС. Это
+    // ближайший доступный эквивалент, не гарантированный аналог.
+    if(rt.tracking && rt.watchId!=null){
+      var sinceGoodFix = rt.lastBrowserCallAt ? (now-rt.lastBrowserCallAt) : 0;
+      if(sinceGoodFix>10000 && !rt.backupActive){
+        try{
+          rt.backupWatchId=navigator.geolocation.watchPosition(
+            function(p){ onPos(p,true); },
+            function(){}, // ошибки запасного канала не обрабатываем отдельно - основной watchdog и так следит
+            {enableHighAccuracy:false,maximumAge:5000,timeout:15000});
+          rt.backupActive=true;
+        }catch(e){}
+      } else if(sinceGoodFix<=10000 && rt.backupActive){
+        try{ if(rt.backupWatchId!=null) navigator.geolocation.clearWatch(rt.backupWatchId); }catch(e){}
+        rt.backupActive=false; rt.backupWatchId=null;
+      }
+    }
     if(IS_HEADLESS) saveTrackSnapshot(); }
   function startTicker(){ rt.lastTick=Date.now(); rt.lastBrowserCallAt=Date.now(); if(rt.tickTimer)clearInterval(rt.tickTimer); rt.tickTimer=setInterval(tickerStep,600); }
   function stopTicker(){ if(rt.tickTimer){ clearInterval(rt.tickTimer); rt.tickTimer=null; } }
@@ -1332,6 +1358,8 @@
     var dirSeg=$("#dirSeg"); if(dirSeg) dirSeg.style.opacity = on ? "0.5" : "1"; }
   function stopTrack(){ rt.tracking=false;
     if(rt.watchId!=null){ navigator.geolocation.clearWatch(rt.watchId); rt.watchId=null; }
+    if(rt.backupWatchId!=null){ try{navigator.geolocation.clearWatch(rt.backupWatchId);}catch(e){} rt.backupWatchId=null; }
+    rt.backupActive=false;
     if(rt.simTimer){ clearInterval(rt.simTimer); rt.simTimer=null; }
     stopTicker();
     stopAccelHelper();
