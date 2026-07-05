@@ -1062,14 +1062,16 @@
       // Поднимаем до ≤35м: 4 согласованных замера в пределах 150м уже надёжно защищают от шума,
       // поэтому ослабление порога входа безопасно. Итоговая точность всё равно ограничена
       // привязкой к ближайшей точке пути (snapToTrack), а не самим acc.
-      if(acc<=35){
+      // Автокалибровка только при движении (>10 км/ч): в стоячем положении GPS-шум
+      // даёт ложную скорость (40-50 км/ч) и случайное смещение координат на десятки метров,
+      // что приводит к неправильной автокалибровке. На ходу шум исчезает, позиция стабильна.
+      if(acc<=35 && rt.speed>=10){
         var autoTM=snapToTrack(c.latitude,c.longitude);
         if(autoTM==null && state.ctx.peregon!=="Все участки"){
-          // Возможно выбран неправильный/устаревший перегон - пробуем честно по всем участкам
           var savedPeregon=state.ctx.peregon; state.ctx.peregon="Все участки";
           autoTM=snapToTrack(c.latitude,c.longitude);
           state.ctx.peregon=savedPeregon;
-          if(autoTM!=null) state.ctx.peregon="Все участки"; // нашли только так - оставляем "Все участки", autoDetectPeregon сам подберёт точный на следующих кадрах
+          if(autoTM!=null) state.ctx.peregon="Все участки";
         }
         if(autoTM!=null){
           if(rt.autoCalCand!=null && Math.abs(autoTM-rt.autoCalCand)<=150){ rt.autoCalCount=(rt.autoCalCount||0)+1; }
@@ -1079,11 +1081,11 @@
             var acKm=kmFrom(autoTM), acPk=pkFrom(autoTM), acM=meterInPk(autoTM);
             state.calib={km:acKm,pk:acPk,m:acM,dir:(state.ctx.towards==="obratno"?"down":"up"),_trackM:autoTM};
             rt.autoCalib=true; rt.odo=0; persist();
-            toast("Автоопределение: "+acKm+" км "+acPk+" пк — проверь и поправь при необходимости");
+            toast("Автоопределение: "+acKm+" км "+acPk+" пк — проверь при необходимости");
             rt.autoCalCand=null; rt.autoCalCount=0;
           }
         }
-      } else { rt.autoCalCand=null; rt.autoCalCount=0; }
+      } else if(rt.speed<10){ rt.autoCalCand=null; rt.autoCalCount=0; }
     }
 
     if(state.calib!=null){
@@ -1091,7 +1093,7 @@
 
       // ── ШАГ 1: АВТОКАЛИБРОВКА (если калибровки нет совсем) ──────────────────
       if(state.calib==null && rt.tracking && !IS_MIRROR){
-        if(acc<=35){
+        if(acc<=35 && rt.speed>=10){
           var autoTM=snapToTrack(c.latitude,c.longitude);
           if(autoTM==null && state.ctx.peregon!=="Все участки"){
             var savedPeregon=state.ctx.peregon; state.ctx.peregon="Все участки";
