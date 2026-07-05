@@ -1179,7 +1179,10 @@
           }
 
           if(candM!=null && usedWideSearch){
-            var manualProtect = rt.manualCalibAt && (now-rt.manualCalibAt)<300000 && Math.abs(candM-drM)>2000;
+            var manualProtect = (function(){
+              var t = rt.manualCalibAt || load("sap_manualCalib", 0);
+              return t && (now-t)<300000 && Math.abs(candM-drM)>2000;
+            })();
             if(manualProtect){
               rt.posM=drM; rt.fixQuality="good";
               var gpsDeltaKm=Math.round((candM-drM)/1000);
@@ -1717,6 +1720,7 @@
     state.calib=cal; rt.autoCalib=false;
     rt.odo=0; rt.last=null; rt.lastGoodFix=null; rt.pendingCandM=null; rt.pendingCount=0; alertState={}; rt.posM=currentMeters(); persist();
     rt.manualCalibAt=Date.now();
+    save("sap_manualCalib", rt.manualCalibAt);
     closeSheets(); renderTrip(); renderList(); toast("Откалибровано: "+km+" км");
     // Если меняем калибровку во время активной поездки (видимый экран в режиме зеркала,
     // реальный счёт идёт в headless-службе) - сразу командуем службе перечитать калибровку.
