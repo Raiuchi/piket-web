@@ -1120,28 +1120,29 @@
         // именно это вызывало 'счётчик дёргается туда-обратно' при обратном направлении.
         var expectedTrackM=state.calib._trackM+(drM-calibM0);
 
-        // Коррекция по GPS — принимаем только если физически правдоподобна И подтверждена дважды подряд
+        // === КОРРЕКЦИЯ ПОЗИЦИИ ПО GPS ===
+        // Простое правило: если GPS хороший — доверяем ему напрямую.
+        // Вся предыдущая сложная логика создавала замкнутые круги:
+        // lastGoodFix обновлялся от НЕПРАВИЛЬНОЙ позиции → sinceGood=0 → окно 5км →
+        // искало снова рядом с неправильной позицией → обновляло lastGoodFix → бесконечный цикл.
         var candM=null, viaTrack=false, tMfinal=null, usedWideSearch=false;
-        var sinceGood=rt.lastGoodFix?(now-rt.lastGoodFix)/1000:0;
-        var searchWindow=Math.min(40000,Math.max(5000,sinceGood*75));
-        if(acc<=120){ var tM=snapToTrack(c.latitude,c.longitude,expectedTrackM,searchWindow);
-          if(tM!=null){ var calibM=metersOf(state.calib.km,state.calib.pk,state.calib.m);
-            candM=calibM+(tM-state.calib._trackM); viaTrack=true; tMfinal=tM;
+        var calibM0cur=metersOf(state.calib.km,state.calib.pk,state.calib.m);
 
-            // КЛЮЧЕВОЙ ФИЧ: если GPS точный (acc<=40м) и узкий поиск нашёл позицию,
-            // но она слишком близко к расчётной (признак что окно "застряло" около
-            // неправильной позиции), запускаем широкий поиск без ограничения окна.
-            // Это ловит случай накопленного отставания/опережения при хорошем сигнале —
-            // классический сценарий "едешь 160, GPS ловит хорошо, а счёт всё равно 3км
-            // сзади". Без этого узкое окно 5км искало правильную точку рядом с НЕПРАВИЛЬНОЙ
-            // ожидаемой позицией, lasGoodFix обновлялся, окно не расширялось, замкнутый круг.
-            if(acc<=40){ var tMwide=snapToTrack(c.latitude,c.longitude);
-              if(tMwide!=null && Math.abs(tMwide-tM)>1000){
-                // Широкий поиск нашёл точку заметно дальше — доверяем ему (GPS точный)
-                var calibMW=metersOf(state.calib.km,state.calib.pk,state.calib.m);
-                candM=calibMW+(tMwide-state.calib._trackM); tMfinal=tMwide; usedWideSearch=true;
-              }
-            }
+        if(acc<=120){
+          // При хорошем GPS (acc<=40) — ВСЕГДА полный поиск по всему треку.
+          // Без ограничения окна. GPS точный — найдём где реально находимся.
+          // При слабом GPS (acc 40-120) — узкое окно как раньше.
+          var tM=null;
+          if(acc<=40){
+            tM=snapToTrack(c.latitude,c.longitude); // широкий, без window
+            usedWideSearch=true;
+          } else {
+            var sinceGood=rt.lastGoodFix?(now-rt.lastGoodFix)/1000:0;
+            var searchWindow=Math.min(40000,Math.max(5000,sinceGood*75));
+            tM=snapToTrack(c.latitude,c.longitude,expectedTrackM,searchWindow);
+          }
+          if(tM!=null){
+            candM=calibM0cur+(tM-state.calib._trackM); viaTrack=true; tMfinal=tM;
           }
         }
 
@@ -1165,13 +1166,9 @@
             candM=calibMW+(tMwide-state.calib._trackM); viaTrack=true; tMfinal=tMwide; usedWideSearch=true; }
         }
 
-        // КРИТИЧНО: если candM найден через АВАРИЙНЫЙ широкий поиск (usedWideSearch=true) -
-        // обычная проверка plausible (maxJump) здесь неприменима по смыслу: расхождение
-        // candM-drM ОГРОМНОЕ по определению (это и есть причина, почему сработал аварийный
-        // поиск), а maxJump рассчитан на защиту от мелких случайных прыжков GPS-шума, не на
-        // подобные ситуации. Раньше правильно найденная аварийным поиском позиция тут же
-        // отбраковывалась этой же проверкой - порочный круг: поиск находит правильную точку,
-        // а защита от прыжков не даёт её принять именно потому что прыжок большой.
+        // КРИТИЧНО: если candM найден при acc<=40 (широкий поиск) -
+        // применяем сразу без pendingCount и plausible. GPS точный — доверяем.
+        // Единственная защита: антиоткат (не даём прыгнуть назад при движении вперёд).
         if(candM!=null && usedWideSearch){
           // Раньше здесь была защита от ложного срабатывания на стыке физически близких/
           // дублирующихся маршрутов (Горы-Павлово) - расхождение, похожее на движение
