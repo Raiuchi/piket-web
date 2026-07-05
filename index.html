@@ -1123,11 +1123,19 @@
           if(snapAcc>0){
             var tm0=snapToTrack(c.latitude,c.longitude);
             if(tm0!=null){
+              // КРИТИЧНО: _trackM должен соответствовать точке РУЧНОЙ КАЛИБРОВКИ,
+              // а не точке где GPS первый раз поймал. Если поезд проехал odo метров
+              // до первого GPS фикса — откатываем trackM назад на это расстояние.
+              // Без этого: ввёл 253км, GPS поймал на 258км → _trackM=258000 → система
+              // думает "trackM=258000 = km253", хотя на самом деле km258. Постоянная
+              // ошибка 5км навечно. С исправлением: _trackM=258000-(+5000)=253000 — верно.
+              var dir0=(dirDown()?-1:1);
+              var tmCorrected=tm0 - dir0*(rt.odo||0);
               if(acc<=40){
-                state.calib._trackM=tm0; persist();
+                state.calib._trackM=tmCorrected; persist();
               } else {
                 if(rt.trackMCand!=null && Math.abs(tm0-rt.trackMCand)<=300){
-                  state.calib._trackM=tm0; persist(); rt.trackMCand=null;
+                  state.calib._trackM=tmCorrected; persist(); rt.trackMCand=null;
                 } else { rt.trackMCand=tm0; }
               }
             }
