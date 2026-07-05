@@ -1126,7 +1126,24 @@
         var searchWindow=Math.min(40000,Math.max(5000,sinceGood*75));
         if(acc<=120){ var tM=snapToTrack(c.latitude,c.longitude,expectedTrackM,searchWindow);
           if(tM!=null){ var calibM=metersOf(state.calib.km,state.calib.pk,state.calib.m);
-            candM=calibM+(tM-state.calib._trackM); viaTrack=true; tMfinal=tM; } }
+            candM=calibM+(tM-state.calib._trackM); viaTrack=true; tMfinal=tM;
+
+            // КЛЮЧЕВОЙ ФИЧ: если GPS точный (acc<=40м) и узкий поиск нашёл позицию,
+            // но она слишком близко к расчётной (признак что окно "застряло" около
+            // неправильной позиции), запускаем широкий поиск без ограничения окна.
+            // Это ловит случай накопленного отставания/опережения при хорошем сигнале —
+            // классический сценарий "едешь 160, GPS ловит хорошо, а счёт всё равно 3км
+            // сзади". Без этого узкое окно 5км искало правильную точку рядом с НЕПРАВИЛЬНОЙ
+            // ожидаемой позицией, lasGoodFix обновлялся, окно не расширялось, замкнутый круг.
+            if(acc<=40){ var tMwide=snapToTrack(c.latitude,c.longitude);
+              if(tMwide!=null && Math.abs(tMwide-tM)>1000){
+                // Широкий поиск нашёл точку заметно дальше — доверяем ему (GPS точный)
+                var calibMW=metersOf(state.calib.km,state.calib.pk,state.calib.m);
+                candM=calibMW+(tMwide-state.calib._trackM); tMfinal=tMwide; usedWideSearch=true;
+              }
+            }
+          }
+        }
 
         // АВАРИЙНЫЙ ШИРОКИЙ ПОИСК: если обычное окно (растёт со временем, но не более 40км)
         // долго (>25с) не находит совпадение рядом с ожидаемой позицией - значит счёт и
