@@ -1132,11 +1132,15 @@
               // Теперь: _trackM = позиция GPS в момент первого хорошего фикса.
               // Формула candM = calibM0 + (tM - _trackM) компенсирует любой
               // постоянный сдвиг трек-данных относительно реальных км-столбов.
+              // _trackM с odo-коррекцией: компенсирует движение до первого GPS фикса.
+              // С speed>5 порогом odo накапливает только реальное движение (не GPS шум).
+              var dir0=(dirDown()?-1:1);
+              var tmCorrected=tm0-dir0*(rt.odo||0);
               if(acc<=40){
-                state.calib._trackM=tm0; persist();
+                state.calib._trackM=tmCorrected; persist();
               } else {
                 if(rt.trackMCand!=null && Math.abs(tm0-rt.trackMCand)<=300){
-                  state.calib._trackM=tm0; persist(); rt.trackMCand=null;
+                  state.calib._trackM=tmCorrected; persist(); rt.trackMCand=null;
                 } else { rt.trackMCand=tm0; }
               }
             }
@@ -1159,14 +1163,15 @@
 
           if(acc<=120){
             var tM=null;
-            if(acc<=40){
-              // Хороший GPS: полный поиск по треку без ограничения окна
+            var sinceGood=rt.lastGoodFix?(now-rt.lastGoodFix)/1000:0;
+            // Окно 3-20км: достаточно для коррекции дрейфа, исключает ложные
+            // совпадения с параллельными путями рядом со станцией.
+            var searchWindow=Math.min(20000,Math.max(3000,sinceGood*200));
+            tM=snapToTrack(c.latitude,c.longitude,expectedTrackM,searchWindow);
+            if(acc<=40) usedWideSearch=true;
+            // Аварийный fallback при большой потере сигнала
+            if(tM==null && acc<=40 && sinceGood>15){
               tM=snapToTrack(c.latitude,c.longitude);
-              usedWideSearch=true;
-            } else {
-              var sinceGood=rt.lastGoodFix?(now-rt.lastGoodFix)/1000:0;
-              var searchWindow=Math.min(40000,Math.max(5000,sinceGood*75));
-              tM=snapToTrack(c.latitude,c.longitude,expectedTrackM,searchWindow);
             }
             if(tM!=null){ candM=metersOf(state.calib.km,state.calib.pk,state.calib.m)+(tM-state.calib._trackM); viaTrack=true; tMfinal=tM; }
           }
