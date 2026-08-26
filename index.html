@@ -2358,5 +2358,14 @@
   }
 })();
 </script>
+<script>
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('./sw.js').catch(function () {
+      // Основное приложение продолжает работать онлайн, даже если PWA-кэш недоступен.
+    });
+  });
+}
+</script>
 </body>
 </html>
