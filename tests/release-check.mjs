@@ -24,6 +24,8 @@ check('service worker is registered', html.includes("navigator.serviceWorker.reg
 const manifest = JSON.parse(read('manifest.json'));
 check('PWA starts in standalone mode', manifest.display === 'standalone');
 check('PWA icons exist', manifest.icons.every(icon => fs.existsSync(new URL(icon.src, root))));
+check('Apple touch icon exists', fs.existsSync(new URL('icons/apple-touch-icon.png', root)));
+check('premium icon is used in header', html.includes('url("icons/icon-192.png")'));
 
 const worker = read('sw.js');
 new vm.Script(worker, { filename: 'sw.js' });
