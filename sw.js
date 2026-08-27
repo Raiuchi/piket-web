@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'piket-web-v1.4.87';
+const CACHE_VERSION = 'piket-web-v1.4.88';
 const APP_SHELL = [
   './',
   './index.html',

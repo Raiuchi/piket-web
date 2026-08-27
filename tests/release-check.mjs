@@ -18,6 +18,7 @@ check('all embedded JavaScript parses', scripts.every((script, index) => {
 
 const ids = [...html.matchAll(/\bid=["']([^"']+)["']/g)].map(match => match[1]);
 check('HTML ids are unique', new Set(ids).size === ids.length);
+check('bottom sheets and dialogs stay above navigation', html.includes('.nav{left:10px;right:10px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:100') && html.includes('.sheet{position:fixed;left:0;right:0;bottom:0;z-index:120') && html.includes('.cfScrim{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:130'));
 check('manifest is linked', html.includes('rel="manifest" href="manifest.json"'));
 check('service worker is registered', html.includes("navigator.serviceWorker.register('./sw.js')"));
 
