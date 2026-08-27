@@ -26,6 +26,8 @@ check('PWA starts in standalone mode', manifest.display === 'standalone');
 check('PWA icons exist', manifest.icons.every(icon => fs.existsSync(new URL(icon.src, root))));
 check('Apple touch icon exists', fs.existsSync(new URL('icons/apple-touch-icon.png', root)));
 check('premium icon is used in header', html.includes('url("icons/icon-192.png")'));
+check('offline premium Manrope fonts exist', fs.existsSync(new URL('assets/fonts/manrope-cyrillic.woff2', root)) && fs.existsSync(new URL('assets/fonts/manrope-latin.woff2', root)));
+check('smooth GPS recovery is implemented', html.includes('correctionTargetOdo') && html.includes('GPS восстановлен — плавно уточняю позицию'));
 
 const worker = read('sw.js');
 new vm.Script(worker, { filename: 'sw.js' });
