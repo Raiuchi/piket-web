@@ -28,6 +28,7 @@ check('Apple touch icon exists', fs.existsSync(new URL('icons/apple-touch-icon.p
 check('premium icon is used in header', html.includes('url("icons/icon-192.png")'));
 check('offline premium Manrope fonts exist', fs.existsSync(new URL('assets/fonts/manrope-cyrillic.woff2', root)) && fs.existsSync(new URL('assets/fonts/manrope-latin.woff2', root)));
 check('smooth GPS recovery is implemented', html.includes('correctionTargetOdo') && html.includes('GPS восстановлен — плавно уточняю позицию'));
+check('stale, spoofed and poor Doppler fixes are rejected', html.includes('fixAge>5000') && html.includes('mockLocation===true') && html.includes('poorDoppler') && html.includes('constellationDiversity'));
 
 const worker = read('sw.js');
 new vm.Script(worker, { filename: 'sw.js' });
