@@ -1,8 +1,9 @@
-const CACHE_VERSION = 'piket-web-v1.4.84';
+const CACHE_VERSION = 'piket-web-v1.4.85';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.json',
+  './assets/train-side.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/apple-touch-icon.png'
