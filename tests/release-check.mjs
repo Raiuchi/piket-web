@@ -32,7 +32,8 @@ const manifest = JSON.parse(read('manifest.json'));
 check('PWA starts in standalone mode', manifest.display === 'standalone');
 check('PWA icons exist', manifest.icons.every(icon => fs.existsSync(new URL(icon.src, root))));
 check('Apple touch icon exists', fs.existsSync(new URL('icons/apple-touch-icon.png', root)));
-check('premium icon is used in header', html.includes('url("icons/icon-192.png")'));
+check('animated signal emblem is bundled and used', fs.existsSync(new URL('icons/piket-signal.gif', root)) && html.includes('url("icons/piket-signal.gif")'));
+check('bottom navigation uses crisp text and icons', html.includes('text-shadow:none!important') && html.includes('filter:none!important;shape-rendering:geometricPrecision'));
 check('offline premium Manrope fonts exist', fs.existsSync(new URL('assets/fonts/manrope-cyrillic.woff2', root)) && fs.existsSync(new URL('assets/fonts/manrope-latin.woff2', root)));
 check('smooth GPS recovery is implemented', html.includes('correctionTargetOdo') && html.includes('GPS восстановлен — плавно уточняю позицию'));
 check('official chainage is separated from physical track', html.includes('var CHAINAGE =') && html.includes('function baseOfficialTrackM') && html.includes('official<=0 || Math.abs(official-physical)>3000'));
@@ -42,11 +43,13 @@ check('dead-reckoning speed decay is based on elapsed time, not callback count',
 check('train dynamics reject impossible acceleration and confirm speed recovery', html.includes('maxSpeedChange=Math.min(12*Math.max(dt,0.5)+5, 45)') && html.includes('rt.speedCandCount<2'));
 check('confirmed large position recovery is immediate', html.includes('diff>=50 && signalGood && !satelliteWeak') && html.includes('rt.odo=newOdoVal; rt.correctionTargetOdo=null'));
 check('PIKET RS premium red theme is present', html.includes('PIKET RS · единая спортивная премиум-тема') && html.includes('#F02D3A'));
+check('speed reference uses red main and yellow side track palette', html.includes('🔴 Гл.п — главный путь · 🟡 Бок.п — боковой путь') && html.includes('.srBadge.glp{background:linear-gradient(180deg,rgba(240,45,58,.30)') && html.includes('.srBadge.bokp{background:linear-gradient(180deg,rgba(245,183,36,.28)') && !html.includes('rgba(47,157,235,.3)'));
+check('restriction acknowledgement uses premium red styling', html.includes('background:linear-gradient(180deg,#f42b43 0%,#c8102e 58%,#8d071e 100%)'));
 check('stale, spoofed and poor Doppler fixes are rejected', html.includes('fixAge>5000') && html.includes('mockLocation===true') && html.includes('poorDoppler') && html.includes('constellationDiversity'));
 
 const worker = read('sw.js');
 new vm.Script(worker, { filename: 'sw.js' });
-check('offline shell includes main page and manifest', worker.includes("'./index.html'") && worker.includes("'./manifest.json'"));
+check('offline shell includes main page, manifest and signal animation', worker.includes("'./index.html'") && worker.includes("'./manifest.json'") && worker.includes("'./icons/piket-signal.gif'"));
 check('old PWA caches are removed', worker.includes("key.startsWith('piket-web-')"));
 
 for (const result of checks) console.log(`${result.ok ? 'PASS' : 'FAIL'} ${result.name}`);

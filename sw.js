@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'piket-web-v1.4.90-rs11';
+const CACHE_VERSION = 'piket-web-v1.4.91-signal1';
 const APP_SHELL = [
   './',
   './index.html',
@@ -7,7 +7,8 @@ const APP_SHELL = [
   './assets/fonts/manrope-latin.woff2',
   './icons/icon-192.png',
   './icons/icon-512.png',
-  './icons/apple-touch-icon.png'
+  './icons/apple-touch-icon.png',
+  './icons/piket-signal.gif'
 ];
 
 self.addEventListener('install', event => {
