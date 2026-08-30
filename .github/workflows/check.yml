@@ -13,7 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run repository checks
-        run: node tests/release-check.mjs
+        run: |
+          node tests/release-check.mjs
+          node tests/reliability-scenarios.mjs
