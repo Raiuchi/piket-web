@@ -58,7 +58,7 @@ check('running time calculator is guarded against impossible plans', source.incl
 
 const worker = read('sw.js');
 new vm.Script(worker, { filename: 'sw.js' });
-check('offline shell includes main page, manifest, versioned route core and signal animation', worker.includes("'./index.html'") && worker.includes("'./manifest.json'") && worker.includes("'./assets/piket-core.js?v=1.4.93-reliability1'") && worker.includes("'./icons/piket-signal.gif'"));
+check('offline shell includes main page, manifest, versioned route core and signal animation', worker.includes("'./index.html'") && worker.includes("'./manifest.json'") && worker.includes("'./assets/piket-core.js?v=1.4.94-reliability1'") && worker.includes("'./icons/piket-signal.gif'"));
 check('old PWA caches are removed', worker.includes("key.startsWith('piket-web-')"));
 
 for (const result of checks) console.log(`${result.ok ? 'PASS' : 'FAIL'} ${result.name}`);
