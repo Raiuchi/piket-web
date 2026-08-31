@@ -64,10 +64,18 @@ check('official timetable train selector is bundled', source.includes('id="sched
 check('station time edits and restriction-aware run calculation are implemented', source.includes('sap_schedule_overrides') && source.includes('openScheduleTimePicker') && source.includes('function scheduleRequirement'));
 check('scheduled run uses departure to next arrival', source.includes('fromTime=x.dep||x.arr,toTime=next.arr||next.dep') && source.includes('speedTitle=calc.zones?\'вне зон \':\'средняя \''));
 check('impossible timetable averages are never shown as driving advice', source.includes('req>MAXSPD?\'проверь данные\''));
+check('Vyborg cab change remains one through trip', source.includes('VYBORG_THROUGH="СПбФин - Каменногорск"') && source.includes('"СПбФин - Выборг", "Выборг - Каменногорск"], recalibrate: true') && source.includes('Выборг: километровая ось переключена автоматически'));
+check('Vyborg timetable joins both kilometer axes', source.includes('function scheduleRowsForContext()') && source.includes('join=128900') && source.includes('scheduleSourceRoute()'));
+check('Dacha Dolgorukova to Petrozavodsk remains one through trip', source.includes('DACHA_THROUGH="Дача Долгорукова - Петрозаводск"') && source.includes('isDachaLeg(label)') && source.includes('"Д. Долг - Павлово", "Павлово - Горы II путь", "Горы - Петрозаводск"], recalibrate: true'));
+check('Zanevsky Post and Gory kilometer-axis changes remain explicit', source.includes('"5 км → 2 км"') && source.includes('"34 км → 42 км"') && source.includes('"42 км → 34 км"') && source.includes('scheduleAliases["зпост2"]'));
+check('819 and 820 share one Chudovo to Petrozavodsk duty route', source.includes('CHUDOVO_DUTY="Чудово - Петрозаводск · 819/820"') && source.includes('String(t.number)==="819"||String(t.number)==="820"'));
+check('duty route changes technical direction at Volkhov and Novgorod', source.includes('place:"Волховстрой"') && source.includes('trainChange:"819 → 820"') && source.includes('place:"Великий Новгород"'));
+check('Volkhov internal junction uses its real 124.4 km boundary', source.includes('boundaryM:124400') && source.includes('Math.abs(curM0-chainNext.boundaryM)<=800'));
+check('cab and train changes wait for a stop', source.includes('(chainNext.cabChange||chainNext.trainChange)&&rt.speed>5') && source.includes('Чудово: смена кабины'));
 
 const worker = read('sw.js');
 new vm.Script(worker, { filename: 'sw.js' });
-check('offline shell includes main page, manifest, route core, timetable and signal animation', worker.includes("'./index.html'") && worker.includes("'./manifest.json'") && worker.includes("'./assets/piket-core.js?v=1.4.99'") && worker.includes("'./assets/piket-schedules.js?v=1.4.99'") && worker.includes("'./icons/piket-signal.gif'"));
+check('offline shell includes main page, manifest, route core, timetable and signal animation', worker.includes("'./index.html'") && worker.includes("'./manifest.json'") && worker.includes("'./assets/piket-core.js?v=1.5.0'") && worker.includes("'./assets/piket-schedules.js?v=1.5.0'") && worker.includes("'./icons/piket-signal.gif'"));
 check('old PWA caches are removed', worker.includes("key.startsWith('piket-web-')"));
 
 for (const result of checks) console.log(`${result.ok ? 'PASS' : 'FAIL'} ${result.name}`);
