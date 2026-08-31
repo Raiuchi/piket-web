@@ -11,8 +11,9 @@ const check = (name, condition) => {
 
 const html = read('index.html');
 const core = read('assets/piket-core.js');
+const schedule = read('assets/piket-schedules.js');
 const source = core + '\n' + html;
-const scripts = [core, ...[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(match => match[1])];
+const scripts = [core, schedule, ...[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(match => match[1])];
 check('all embedded JavaScript parses', scripts.every((script, index) => {
   try { new vm.Script(script, { filename: `web-script-${index}.js` }); return true; }
   catch { return false; }
@@ -59,10 +60,12 @@ check('wrong direction requires repeated heading mismatch', source.includes('dir
 check('unacknowledged restrictions repeat without constant spam', source.includes('Date.now()-(rt.alertRepeatAt||0)>20000') && source.includes('Ограничение не подтверждено'));
 check('restriction trigger distance is audited', source.includes('sap_triggerAudit') && core.includes('triggerAudit'));
 check('running time calculator is guarded against impossible plans', source.includes('Перегонное время хода') && source.includes('План недостижим безопасно') && core.includes('requiredAverageKmh'));
+check('official timetable train selector is bundled', source.includes('id="scheduleTrainPick"') && source.includes('function renderTrainSchedule') && schedule.includes('window.PIKET_SCHEDULES=') && (schedule.match(/"number":"\d{3}"/g) || []).length === 66);
+check('station time edits and restriction-aware run calculation are implemented', source.includes('sap_schedule_overrides') && source.includes('openScheduleTimePicker') && source.includes('function scheduleRequirement'));
 
 const worker = read('sw.js');
 new vm.Script(worker, { filename: 'sw.js' });
-check('offline shell includes main page, manifest, versioned route core and signal animation', worker.includes("'./index.html'") && worker.includes("'./manifest.json'") && worker.includes("'./assets/piket-core.js?v=1.4.97'") && worker.includes("'./icons/piket-signal.gif'"));
+check('offline shell includes main page, manifest, route core, timetable and signal animation', worker.includes("'./index.html'") && worker.includes("'./manifest.json'") && worker.includes("'./assets/piket-core.js?v=1.4.98'") && worker.includes("'./assets/piket-schedules.js?v=1.4.98'") && worker.includes("'./icons/piket-signal.gif'"));
 check('old PWA caches are removed', worker.includes("key.startsWith('piket-web-')"));
 
 for (const result of checks) console.log(`${result.ok ? 'PASS' : 'FAIL'} ${result.name}`);
