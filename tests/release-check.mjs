@@ -62,10 +62,12 @@ check('restriction trigger distance is audited', source.includes('sap_triggerAud
 check('running time calculator is guarded against impossible plans', source.includes('Перегонное время хода') && source.includes('План недостижим безопасно') && core.includes('requiredAverageKmh'));
 check('official timetable train selector is bundled', source.includes('id="scheduleTrainPick"') && source.includes('function renderTrainSchedule') && schedule.includes('window.PIKET_SCHEDULES=') && (schedule.match(/"number":"\d{3}"/g) || []).length === 66);
 check('station time edits and restriction-aware run calculation are implemented', source.includes('sap_schedule_overrides') && source.includes('openScheduleTimePicker') && source.includes('function scheduleRequirement'));
+check('scheduled run uses departure to next arrival', source.includes('fromTime=x.dep||x.arr,toTime=next.arr||next.dep') && source.includes('speedTitle=calc.zones?\'вне зон \':\'средняя \''));
+check('impossible timetable averages are never shown as driving advice', source.includes('req>MAXSPD?\'проверь данные\''));
 
 const worker = read('sw.js');
 new vm.Script(worker, { filename: 'sw.js' });
-check('offline shell includes main page, manifest, route core, timetable and signal animation', worker.includes("'./index.html'") && worker.includes("'./manifest.json'") && worker.includes("'./assets/piket-core.js?v=1.4.98'") && worker.includes("'./assets/piket-schedules.js?v=1.4.98'") && worker.includes("'./icons/piket-signal.gif'"));
+check('offline shell includes main page, manifest, route core, timetable and signal animation', worker.includes("'./index.html'") && worker.includes("'./manifest.json'") && worker.includes("'./assets/piket-core.js?v=1.4.99'") && worker.includes("'./assets/piket-schedules.js?v=1.4.99'") && worker.includes("'./icons/piket-signal.gif'"));
 check('old PWA caches are removed', worker.includes("key.startsWith('piket-web-')"));
 
 for (const result of checks) console.log(`${result.ok ? 'PASS' : 'FAIL'} ${result.name}`);
