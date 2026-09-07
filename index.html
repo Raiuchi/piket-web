@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta name="theme-color" content="#070B12">
 <title>ПИКЕТ · Сапсан</title>
 <link rel="manifest" href="manifest.json">
@@ -858,8 +859,8 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="assets/piket-core.js?v=1.5.0"></script>
-<script src="assets/piket-schedules.js?v=1.5.0"></script>
+<script src="assets/piket-core.js?v=2.0.3-2"></script>
+<script src="assets/piket-schedules.js?v=2.0.3-2"></script>
 <script>
 "use strict";
 (function(){
@@ -2781,7 +2782,9 @@
 <script>
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   window.addEventListener('load', function () {
-    navigator.serviceWorker.register('./sw.js').catch(function () {
+    navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'}).then(function(registration){
+      registration.update();
+    }).catch(function () {
       // Основное приложение продолжает работать онлайн, даже если PWA-кэш недоступен.
     });
   });
