@@ -62,6 +62,7 @@ check('restriction trigger distance is audited', source.includes('sap_triggerAud
 check('running time calculator is guarded against impossible plans', source.includes('Перегонное время хода') && source.includes('План недостижим безопасно') && core.includes('requiredAverageKmh'));
 check('official timetable train selector is bundled', source.includes('id="scheduleTrainPick"') && source.includes('function renderTrainSchedule') && schedule.includes('window.PIKET_SCHEDULES=') && (schedule.match(/"number":"\d{3}"/g) || []).length === 66);
 check('station time edits and restriction-aware run calculation are implemented', source.includes('sap_schedule_overrides') && source.includes('openScheduleTimePicker') && source.includes('function scheduleRequirement'));
+check('single-picket restrictions reserve 100 metres in run calculation', source.includes('r.kmE!=null?metersOf(r.kmE,r.pkE):start+100') && !source.includes('+r.spd>0&&r.kmE!=null'));
 check('scheduled run uses departure to next arrival', source.includes('fromTime=x.dep||x.arr,toTime=next.arr||next.dep') && source.includes('speedTitle=calc.zones?\'вне зон \':\'средняя \''));
 check('impossible timetable averages are never shown as driving advice', source.includes('req>MAXSPD?\'проверь данные\''));
 check('Vyborg cab change remains one through trip', source.includes('VYBORG_THROUGH="СПбФин - Каменногорск"') && source.includes('"СПбФин - Выборг", "Выборг - Каменногорск"], recalibrate: true') && source.includes('Выборг: километровая ось переключена автоматически'));
