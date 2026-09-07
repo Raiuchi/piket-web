@@ -995,7 +995,7 @@
   function activeThrough(){if(state&&state.ctx&&state.ctx.through)return state.ctx.through;if(isVyborgLeg(state.ctx.peregon))return"vyborg";if(isDachaLeg(state.ctx.peregon))return"dacha";return null;}
   function journeyTowards(){return activeThrough()==="chudovo"?(state.ctx.tripTowards||"tuda"):state.ctx.towards;}
   function contextPeregonLabel(label){var through=activeThrough();return through==="chudovo"?CHUDOVO_DUTY:(through==="vyborg"?VYBORG_THROUGH:(through==="dacha"?DACHA_THROUGH:label));}
-  function contextPeregonChoices(){return PEREGONS.filter(function(label){return !isVyborgLeg(label)&&!isDachaLeg(label)&&label!=="Чудово - Новгород"&&label!=="Волховстрой - Чудово";}).concat([DACHA_THROUGH,CHUDOVO_DUTY,VYBORG_THROUGH]);}
+  function contextPeregonChoices(){return PEREGONS.filter(function(label){return label!=="Все участки"&&!isVyborgLeg(label)&&!isDachaLeg(label)&&label!=="Чудово - Новгород"&&label!=="Волховстрой - Чудово";}).concat([DACHA_THROUGH,CHUDOVO_DUTY,VYBORG_THROUGH]);}
   function contextPeregonValue(label){var dir=journeyTowards();if(label===VYBORG_THROUGH)return dir==="obratno"?"Выборг - Каменногорск":"СПбФин - Выборг";if(label===DACHA_THROUGH)return dir==="obratno"?"Горы - Петрозаводск":"Д. Долг - Павлово";if(label===CHUDOVO_DUTY)return dir==="obratno"?"Горы - Петрозаводск":"Волховстрой - Чудово";return label;}
   var LEADS=[{v:0,t:"в зоне"},{v:500,t:"0.5 км"},{v:1000,t:"1 км"},{v:1500,t:"1.5 км"},{v:2000,t:"2 км"},{v:3000,t:"3 км"},{v:4000,t:"4 км"},{v:5000,t:"5 км"}];
   var REASONS=["— без причины —","Ремонт пути","Путевые работы","Неисправность пути","Дефект рельса","Неисправность стрелочного перевода","Пучина / выплеск / просадка пути","Неисправность искусственного сооружения","Неисправность переездной сигнализации","Неисправность контактной сети","Работы на контактной сети","Подготовиться к опусканию токоприёмника","Опустить токоприёмник","Поднять токоприёмник","Отключить ток","Включить ток","Неисправность средств СЦБ и связи","Неисправность путевых устройств АЛС","Работа путевых машин","Погрузка / выгрузка на соседнем пути","Негабаритный груз","Подвижной состав с ограниченной скоростью","Работа съёмных подвижных единиц","Особая бдительность / особые условия"];
@@ -1048,6 +1048,7 @@
     calib: load("sap_cal",null),
     ctx: Object.assign({peregon:"Все участки",towards:"tuda"}, load("sap_ctx",{}))
   };
+  if(state.ctx.peregon==="Все участки") state.ctx={peregon:"СпбГл - Москва",towards:state.ctx.towards||"tuda",through:null,tripTowards:null};
   function persist(){ save("sap_res",state.restrictions); save("sap_set",state.settings); save("sap_cal",state.calib); save("sap_ctx",state.ctx); }
 
   // ═══ ПАМЯТЬ ПРОБЛЕМНЫХ ЗОН GPS ═══
