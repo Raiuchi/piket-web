@@ -29,7 +29,7 @@ check('DU-61 practical reasons and power commands are present', ['Неиспра
 check('official kilometer offset is learned and isolated per route', source.includes('sap_routeOffsets') && source.includes('function routeOfficialOffset') && source.includes('function learnRouteOffset') && source.includes('officialTrackM(autoTM,state.ctx.peregon)'));
 check('spline snapping continuously refines sub-segment position', source.includes('for(var refine=0;refine<10;refine++)') && source.includes('var refined=(left+right)/2'));
 check('manifest is linked', source.includes('rel="manifest" href="manifest.json"'));
-check('service worker is registered', source.includes("navigator.serviceWorker.register('./sw.js')"));
+check('service worker is registered', /navigator\.serviceWorker\.register\('\.\/sw\.js'(?:,|\))/.test(source));
 
 const manifest = JSON.parse(read('manifest.json'));
 check('PWA starts in standalone mode', manifest.display === 'standalone');
@@ -75,7 +75,7 @@ check('cab and train changes wait for a stop', source.includes('(chainNext.cabCh
 
 const worker = read('sw.js');
 new vm.Script(worker, { filename: 'sw.js' });
-check('offline shell includes main page, manifest, route core, timetable and signal animation', worker.includes("'./index.html'") && worker.includes("'./manifest.json'") && worker.includes("'./assets/piket-core.js?v=1.5.0'") && worker.includes("'./assets/piket-schedules.js?v=1.5.0'") && worker.includes("'./icons/piket-signal.gif'"));
+check('offline shell includes main page, manifest, route core, timetable and signal animation', worker.includes("'./index.html'") && worker.includes("'./manifest.json'") && /'\.\/assets\/piket-core\.js\?v=[^']+'/.test(worker) && /'\.\/assets\/piket-schedules\.js\?v=[^']+'/.test(worker) && worker.includes("'./icons/piket-signal.gif'"));
 check('old PWA caches are removed', worker.includes("key.startsWith('piket-web-')"));
 
 for (const result of checks) console.log(`${result.ok ? 'PASS' : 'FAIL'} ${result.name}`);
