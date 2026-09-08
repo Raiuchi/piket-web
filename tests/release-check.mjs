@@ -30,6 +30,7 @@ check('official kilometer offset is learned and isolated per route', source.incl
 check('spline snapping continuously refines sub-segment position', source.includes('for(var refine=0;refine<10;refine++)') && source.includes('var refined=(left+right)/2'));
 check('manifest is linked', source.includes('rel="manifest" href="manifest.json"'));
 check('service worker is registered', /navigator\.serviceWorker\.register\('\.\/sw\.js'(?:,|\))/.test(source));
+check('premium in-app update banner is bundled', source.includes('Вышло обновление') && source.includes('id="ubDownload"') && source.includes('showUpdateBanner'));
 
 const manifest = JSON.parse(read('manifest.json'));
 check('PWA starts in standalone mode', manifest.display === 'standalone');
