@@ -19,4 +19,7 @@ check('малая контрольная поправка применяется
 check('крупная поправка ждёт подтверждений',r.checkpointCorrection(600,3).confirmed===false&&r.checkpointCorrection(600,4).confirmed===true);
 check('срабатывание в пределах 250 м принято',r.triggerAudit(2000,1810).ok===true);
 check('раннее или позднее срабатывание обнаружено',r.triggerAudit(2000,1600).ok===false);
-console.log(`${passed}/12 reliability scenarios passed`);
+check('региональный маршрут отбрасывает ложные 250 км/ч',r.browserSpeedCeiling('Горы - Петрозаводск')===150);
+check('скоростной маршрут сохраняет честные 250 км/ч',r.browserSpeedCeiling('СпбГл - Москва')===255);
+check('счёт по ложной скорости прекращается при долгой потере GPS',r.lossSpeed(250,1,120,false,0)===0&&r.lossSpeed(160,30,30,false,0)<110);
+console.log(`${passed}/15 reliability scenarios passed`);

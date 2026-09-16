@@ -45,8 +45,11 @@ check('smooth GPS recovery is implemented', source.includes('correctionTargetOdo
 check('official chainage is separated from physical track', source.includes('var CHAINAGE =') && source.includes('function baseOfficialTrackM') && source.includes('official<=0 || Math.abs(official-physical)>3000'));
 check('moving recovery follows confirmed physical GPS target', source.includes('targetTrackM=state.calib._trackM+(dirDown()?-1:1)*rt.correctionTargetOdo') && source.includes('plausibilityDiff=Math.abs(tMfinal-targetTrackM)') && source.includes('rt.correctionTargetOdo=newOdoVal'));
 check('GPS jitter is filtered along the moving track without coordinate lag', source.includes('function stableAlongTrackCandidate') && source.includes('rt.gpsResiduals.length>5'));
-check('dead-reckoning speed decay is based on elapsed time, not callback count', source.includes('decayPerSecond') && source.includes('Math.pow(decayPerSecond,lossDt)'));
+check('dead-reckoning speed decay is based on elapsed time, not callback count', source.includes('lossSpeed(rt.speed,lossDt,totalLossSec') && core.includes('Math.pow(decay,elapsedSec)'));
 check('train dynamics reject impossible acceleration and confirm speed recovery', source.includes('maxSpeedChange=Math.min(12*Math.max(dt,0.5)+5, 45)') && source.includes('rt.speedCandCount<2'));
+check('regional web routes reject false 250 km/h fixes', source.includes('currentBrowserSpeedCeiling()') && source.includes('gps_speed_rejected') && core.includes('browserSpeedCeiling'));
+check('web GPS restarts from last usable fix rather than repeated errors', source.includes('primaryFixSilence=rt.lastBrowserFixAt') && source.includes('gps_watch_restarted') && source.includes('sinceGoodFix = primaryFixSilence'));
+check('dead reckoning cannot run indefinitely on stale speed', source.includes('PIKET_RELIABILITY.lossSpeed') && core.includes('totalLossSec>=120'));
 check('stationary coordinates suppress false high Doppler speed', source.includes('stationaryAge>=10 && stationaryDist<=25') && source.includes('rt.speed=0'));
 check('learned jammer zones never speak or toast repeatedly', source.includes('rt.zoneHintCooldownUntil=Date.now()+600000') && source.includes('частая зона помех') && !source.includes('Внимание, впереди зона частого глушения'));
 check('trip start requires an explicit manual calibration', source.includes('state.calib==null || state.calib._manual!==true') && source.includes('Сначала обязательная калибровка') && source.includes('_manual:true'));
