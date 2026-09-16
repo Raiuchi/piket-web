@@ -70,11 +70,13 @@ check('live timetable pace follows actual position and remaining clock time', so
 check('impossible timetable averages are marked', source.includes('impossible=!isFinite(req)||req>MAXSPD') && source.includes('график недостижим · расчёт'));
 check('Vyborg cab change remains one through trip', source.includes('VYBORG_THROUGH="СПбФин - Каменногорск"') && source.includes('"СПбФин - Выборг", "Выборг - Каменногорск"], recalibrate: true') && source.includes('Выборг: километровая ось переключена автоматически'));
 check('Vyborg timetable joins both kilometer axes', source.includes('function scheduleRowsForContext()') && source.includes('join=128900') && source.includes('scheduleSourceRoute()'));
+check('Vyborg uses the documented 128.9 km stopped junction', source.includes('boundaryM:128900,cabChange:true') && source.includes('boundaryM:1000,cabChange:true'));
 check('Dacha Dolgorukova to Petrozavodsk remains one through trip', source.includes('DACHA_THROUGH="Дача Долгорукова - Петрозаводск"') && source.includes('isDachaLeg(label)') && source.includes('"Д. Долг - Павлово", "Павлово - Горы II путь", "Горы - Петрозаводск"], recalibrate: true'));
 check('Zanevsky Post and Gory marks retain direction-specific flight-map labels', source.includes('"7 км 4 пк → 2 км 3 пк"') && source.includes('"2 км 3 пк → 6 км 4 пк"') && source.includes('"33 км 5 пк → 42 км 8 пк"') && source.includes('"42 км 8 пк → 33 км 5 пк"'));
 check('819 and 820 share one Chudovo to Petrozavodsk duty route', source.includes('CHUDOVO_DUTY="Чудово - Петрозаводск"') && source.includes('String(t.number)==="819"||String(t.number)==="820"'));
 check('duty route changes technical direction at Volkhov and Novgorod', source.includes('place:"Волховстрой"') && source.includes('trainChange:"819 → 820"') && source.includes('place:"Великий Новгород"'));
 check('Volkhov internal junction uses its real 124.4 km boundary', source.includes('boundaryM:124400') && source.includes('Math.abs(curM0-chainNext.boundaryM)<=800'));
+check('Chudovo and Novgorod use production junction boundaries', source.includes('place:"Чудово",boundaryM:101000,cabChange:true') && source.includes('place:"Великий Новгород",boundaryM:75175,trainChange'));
 check('cab and train changes wait for a stop', source.includes('(chainNext.cabChange||chainNext.trainChange)&&rt.speed>5') && source.includes('Чудово: смена кабины'));
 
 const worker = read('sw.js');
