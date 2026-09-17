@@ -49,6 +49,7 @@ check('dead-reckoning speed decay is based on elapsed time, not callback count',
 check('train dynamics reject impossible acceleration and confirm speed recovery', source.includes('maxSpeedChange=Math.min(12*Math.max(dt,0.5)+5, 45)') && source.includes('rt.speedCandCount<2'));
 check('regional web routes reject false 250 km/h fixes', source.includes('currentBrowserSpeedCeiling()') && source.includes('gps_speed_rejected') && core.includes('browserSpeedCeiling'));
 check('web GPS restarts from last usable fix rather than repeated errors', source.includes('primaryFixSilence=rt.lastBrowserFixAt') && source.includes('gps_watch_restarted') && source.includes('sinceGoodFix = primaryFixSilence'));
+check('iPhone foreground return discards stale motion and restarts GPS', source.includes('function restartBrowserGps') && source.includes('gps_resume_restart') && source.includes('rt.speed=0;rt.last=null') && source.includes('iPhone: не блокируй экран — iOS остановит GPS'));
 check('dead reckoning cannot run indefinitely on stale speed', source.includes('PIKET_RELIABILITY.lossSpeed') && core.includes('totalLossSec>=120'));
 check('stationary coordinates suppress false high Doppler speed', source.includes('stationaryAge>=10 && stationaryDist<=25') && source.includes('rt.speed=0'));
 check('learned jammer zones never speak or toast repeatedly', source.includes('rt.zoneHintCooldownUntil=Date.now()+600000') && source.includes('частая зона помех') && !source.includes('Внимание, впереди зона частого глушения'));
