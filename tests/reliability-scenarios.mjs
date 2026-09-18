@@ -19,7 +19,15 @@ check('малая контрольная поправка применяется
 check('крупная поправка ждёт подтверждений',r.checkpointCorrection(600,3).confirmed===false&&r.checkpointCorrection(600,4).confirmed===true);
 check('срабатывание в пределах 250 м принято',r.triggerAudit(2000,1810).ok===true);
 check('раннее или позднее срабатывание обнаружено',r.triggerAudit(2000,1600).ok===false);
-check('региональный маршрут отбрасывает ложные 250 км/ч',r.browserSpeedCeiling('Горы - Петрозаводск')===150);
-check('скоростной маршрут сохраняет честные 250 км/ч',r.browserSpeedCeiling('СпбГл - Москва')===255);
+check('дача — Петрозаводск ограничена 120 км/ч',r.browserSpeedCeiling('Д. Долг - Павлово')===120&&r.browserSpeedCeiling('Горы - Петрозаводск')===120);
+check('Чудово — Петрозаводск ограничено 120 км/ч',r.browserSpeedCeiling('Чудово - Новгород')===120&&r.browserSpeedCeiling('Волховстрой - Чудово')===120);
+check('Балтийский — Луга ограничено 140 км/ч',r.browserSpeedCeiling('Броневая - Луга')===140);
+check('Финляндский — Каменногорск ограничено 160 км/ч',r.browserSpeedCeiling('СПбФин - Выборг')===160&&r.browserSpeedCeiling('Выборг - Каменногорск')===160);
+check('Москва без выбранного номера допускает автоопределение до 250',r.browserSpeedCeiling('СпбГл - Москва')===250&&r.browserTrustedSpeedCeiling('СпбГл - Москва')===160);
+check('обычные поезда Москва — Петербург ограничены 160 км/ч',['723','724','801','802','841','842'].every(n=>r.browserSpeedCeiling('СпбГл - Москва',n)===160));
+check('Сапсан 751–786 допускает 250 км/ч',r.browserSpeedCeiling('СпбГл - Москва','751')===250&&r.browserSpeedCeiling('СпбГл - Москва','786')===250);
+check('чужой или испорченный номер не включает 250 км/ч',r.browserSpeedCeiling('СпбГл - Москва','787')===160&&r.browserSpeedCeiling('СпбГл - Москва','751x')===160);
+const autoFirst=r.confirmAutomaticHighSpeed(null,0,200,200,true),autoSecond=r.confirmAutomaticHighSpeed(autoFirst.candidate,autoFirst.count,205,205,true);
+check('автоматические 250 требуют два координатных подтверждения',!autoFirst.confirmed&&autoSecond.confirmed&&!r.confirmAutomaticHighSpeed(null,0,250,250,false).confirmed);
 check('счёт по ложной скорости прекращается при долгой потере GPS',r.lossSpeed(250,1,120,false,0)===0&&r.lossSpeed(160,30,30,false,0)<110);
-console.log(`${passed}/15 reliability scenarios passed`);
+console.log(`${passed} reliability scenarios passed`);
