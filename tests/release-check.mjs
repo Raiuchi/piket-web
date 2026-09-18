@@ -10,6 +10,7 @@ const check = (name, condition) => {
 };
 
 const html = read('index.html');
+const readme = read('README.md');
 const core = read('assets/piket-core.js');
 const schedule = read('assets/piket-schedules.js');
 const source = core + '\n' + html;
@@ -21,6 +22,7 @@ check('all embedded JavaScript parses', scripts.every((script, index) => {
 
 const ids = [...html.matchAll(/\bid=["']([^"']+)["']/g)].map(match => match[1]);
 check('HTML ids are unique', new Set(ids).size === ids.length);
+check('repository documentation targets only iPhone and iPad', readme.includes('Веб-приложение исключительно для iPhone и iPad') && readme.includes('Для Android используйте полноценную') && readme.includes('APK-версию ПИКЕТ') && readme.includes('## Установка на iPhone или iPad') && !readme.includes('### Android') && !readme.includes('Установить Web как приложение'));
 check('bottom sheets and dialogs stay above navigation', source.includes('.nav{left:10px;right:10px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:100') && source.includes('.sheet{position:fixed;left:0;right:0;bottom:0;z-index:120') && source.includes('.cfScrim{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:130'));
 check('closed bottom sheets cannot cast shadows over navigation', source.includes('.sheet:not(.on){visibility:hidden!important;box-shadow:none!important}'));
 check('night mode and in-app replacement disclaimer are removed', !source.includes('Ночной режим') && !source.includes('nightOverlay') && !source.includes('Помощник, а не замена'));
