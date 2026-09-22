@@ -1786,7 +1786,7 @@ window.addEventListener("error",function(e){
       rt.diagnosticSeq=(rt.diagnosticSeq||0)+1;
       var selectedTrain=selectedScheduleTrain();
       rows.push(Object.assign({time:Date.now(),elapsed_ms:(window.performance&&performance.now)?Math.round(performance.now()):null,seq:rt.diagnosticSeq,event:event,source:"browser",trip_session_id:rt.diagnosticSessionId||null,route:state.ctx.peregon,direction:journeyTowards(),train:selectedTrain?selectedTrain.number:null,official_m:rt.posM,physical_m:rt.physicalM,speed_kmh:rt.speed,quality:rt.fixQuality,gps_state:rt.gpsState},fields||{}));
-      while(rows.length>6000)rows.shift();
+      while(rows.length>5000)rows.shift();
       localStorage.setItem(diagnosticKey,JSON.stringify(rows));
     } catch(e){ if(!diagnosticLast)toast("Не удалось сохранить журнал браузера"); }
   }
