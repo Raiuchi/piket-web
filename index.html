@@ -897,8 +897,8 @@ window.addEventListener("error",function(e){
   try{if(window.Android&&window.Android.notifyUiStartupError)window.Android.notifyUiStartupError(String(e.message||"unknown")+" @ "+String(e.lineno||0)+":"+String(e.colno||0));}catch(ignore){}
 });
 </script>
-<script src="assets/piket-core.js?v=2.0.30"></script>
-<script src="assets/piket-schedules.js?v=2.0.30"></script>
+<script src="assets/piket-core.js?v=2.0.30-618c6a65"></script>
+<script src="assets/piket-schedules.js?v=2.0.30-618c6a65"></script>
 <script>
 "use strict";
 (function(){
@@ -3176,7 +3176,14 @@ window.addEventListener("error",function(e){
 <script>
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   window.addEventListener('load', function () {
-    navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'}).catch(function () {
+    navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'}).then(function (registration) {
+      // Safari иногда откладывает штатную проверку PWA. Проверяем обновление при каждом
+      // открытии и возврате приложения, не трогая локальные ограничения и настройки.
+      registration.update().catch(function () {});
+      window.addEventListener('pageshow', function () {
+        registration.update().catch(function () {});
+      });
+    }).catch(function () {
       // Основное приложение продолжает работать онлайн, даже если PWA-кэш недоступен.
     });
   });

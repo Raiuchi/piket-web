@@ -32,6 +32,7 @@ check('official kilometer offset is learned and isolated per route', source.incl
 check('spline snapping continuously refines sub-segment position', source.includes('for(var refine=0;refine<10;refine++)') && source.includes('var refined=(left+right)/2'));
 check('manifest is linked', source.includes('rel="manifest" href="manifest.json"'));
 check('service worker is registered', /navigator\.serviceWorker\.register\('\.\/sw\.js'(?:,|\))/.test(source));
+check('Apple Web checks for updates on every open and foreground return', source.includes("register('./sw.js', {updateViaCache:'none'})") && source.includes('registration.update().catch(function () {})') && source.includes("window.addEventListener('pageshow'"));
 check('Android update banner is bundled but hidden from Apple Web', source.includes('Вышло обновление') && source.includes('id="ubDownload"') && source.includes('showUpdateBanner') && source.includes('update-banner platform-android-only'));
 check('update banner stays readable on narrow phones', source.includes('grid-template-columns:auto minmax(0,1fr) auto auto') && source.includes('@media(max-width:480px)') && source.includes('overflow-wrap:anywhere') && source.includes('role="status" aria-live="polite"'));
 check('Apple Web hides unsupported Android controls', source.includes('if(!window.Android)document.documentElement.classList.add("web-runtime")') && source.includes('html.web-runtime .platform-android-only{display:none!important}') && source.includes('sat platform-android-only') && source.includes('row platform-android-only') && source.includes('sheet platform-android-only'));
@@ -104,6 +105,7 @@ check('manual picket nudge buttons are removed', !source.includes('id="pkMinus"'
 
 const worker = read('sw.js');
 new vm.Script(worker, { filename: 'sw.js' });
+check('every synchronized build has a unique cache fingerprint', /const CACHE_VERSION = 'piket-web-v\d+\.\d+\.\d+-[0-9a-f]{8}';/.test(worker) && /piket-core\.js\?v=\d+\.\d+\.\d+-[0-9a-f]{8}/.test(html) && /piket-schedules\.js\?v=\d+\.\d+\.\d+-[0-9a-f]{8}/.test(html));
 check('offline shell includes main page, manifest, route core, timetable and signal animation', worker.includes("'./index.html'") && worker.includes("'./manifest.json'") && /'\.\/assets\/piket-core\.js\?v=[^']+'/.test(worker) && /'\.\/assets\/piket-schedules\.js\?v=[^']+'/.test(worker) && worker.includes("'./icons/piket-signal.gif'"));
 check('old PWA caches are removed', worker.includes("key.startsWith('piket-web-')"));
 
