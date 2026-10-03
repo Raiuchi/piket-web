@@ -14,6 +14,9 @@ const readme = read('README.md');
 const core = read('assets/piket-core.js');
 const schedule = read('assets/piket-schedules.js');
 const source = core + '\n' + html;
+const settingsHtml = html.slice(html.indexOf('<section class="view pad" id="v-set">'), html.indexOf('<section class="view pad" id="v-speedlist">'));
+const settingsOrder = ['id="btnSpeedRef"', 'id="btnWipe"', 'id="leadDn"', 'id="updateSettingsCard"', 'id="diagnosticsCard"']
+  .map(marker => settingsHtml.indexOf(marker));
 const scripts = [core, schedule, ...[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(match => match[1])];
 check('all embedded JavaScript parses', scripts.every((script, index) => {
   try { new vm.Script(script, { filename: `web-script-${index}.js` }); return true; }
@@ -38,6 +41,7 @@ check('Android update banner is bundled but hidden from Apple Web', source.inclu
 check('update banner stays readable on narrow phones', source.includes('grid-template-columns:auto minmax(0,1fr) auto auto') && source.includes('@media(max-width:480px)') && source.includes('overflow-wrap:anywhere') && source.includes('role="status" aria-live="polite"'));
 check('Apple Web hides unsupported Android controls', source.includes('if(!window.Android)document.documentElement.classList.add("web-runtime")') && source.includes('html.web-runtime .platform-android-only{display:none!important}') && source.includes('sat platform-android-only') && source.includes('row platform-android-only') && source.includes('sheet platform-android-only'));
 check('Apple Web does not promise vibration or screen control', !source.includes('if(navigator.vibrate)') && !source.includes('navigator.wakeLock.request') && source.includes('function scheduleWebDim(){clearTimeout(rt.screenDimTimer);document.body.classList.remove("screen-dim");}') && source.includes('Apple Web · обновляется автоматически'));
+check('settings keep the requested operational order and speed-order title', settingsHtml.includes('<span class="ref-kicker">Приказ по скоростям</span>') && !settingsHtml.includes('Путевой норматив') && settingsOrder.every((position, index) => position >= 0 && (index === 0 || position > settingsOrder[index - 1])));
 
 const manifest = JSON.parse(read('manifest.json'));
 check('PWA starts in standalone mode', manifest.display === 'standalone');
