@@ -44,6 +44,9 @@ check('Apple Web hides unsupported Android controls', source.includes('if(!windo
 check('Apple Web does not promise vibration or screen control', !source.includes('if(navigator.vibrate)') && !source.includes('navigator.wakeLock.request') && source.includes('function scheduleWebDim(){clearTimeout(rt.screenDimTimer);document.body.classList.remove("screen-dim");}') && source.includes('Apple Web · обновляется автоматически'));
 check('settings keep the requested operational order and speed-order title', settingsHtml.includes('<span class="ref-kicker">Приказ по скоростям</span>') && !settingsHtml.includes('Путевой норматив') && settingsOrder.every((position, index) => position >= 0 && (index === 0 || position > settingsOrder[index - 1])));
 check('wipe restrictions belongs to the restrictions list', !settingsHtml.includes('id="btnWipe"') && listHtml.indexOf('id="btnWipe"') > listHtml.indexOf('id="listBox"'));
+check('wipe restrictions is visible only for a non-empty list', source.includes('id="wipeCard" style="padding:14px;display:none"') && source.includes('$("#wipeCard").style.display=arr.length?"block":"none"'));
+check('trip screen combines order speed timetable and nearest restriction', source.includes('id="tripConsole"') && source.includes('id="tripOrderCard"') && source.includes('id="tripScheduleCard"') && source.includes('id="tripRestrictionCard"') && source.includes('function renderTripConsole()') && source.includes('renderTripConsole();'));
+check('speed order follows exact kilometer and picket sequentially', source.includes('function speedPositionsFromName') && source.includes('function stationPositionForSpeedRow') && source.includes('function activeSpeedOrder') && source.includes('candidate.index>=rt.speedOrderIndex') && source.includes('highlightSpeedRefRow(m,false)'));
 
 const manifest = JSON.parse(read('manifest.json'));
 check('PWA starts in standalone mode', manifest.display === 'standalone');
