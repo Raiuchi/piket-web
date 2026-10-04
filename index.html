@@ -707,7 +707,7 @@
       </button>
       <button type="button" class="tc-card schedule" id="tripScheduleCard">
         <span class="tc-kicker">Перегонное время</span>
-        <span class="tc-main"><b id="tripScheduleTime">—</b><span class="tc-copy"><b id="tripScheduleName">Выбери номер поезда</b><span id="tripScheduleMeta">Покажу текущий перегон</span></span><i class="tc-arrow">›</i></span>
+        <span class="tc-main"><b id="tripScheduleTime">—</b><span class="tc-copy"><b id="tripScheduleName">Выбери поезд</b><span id="tripScheduleMeta">Покажу текущий перегон</span></span><i class="tc-arrow">›</i></span>
       </button>
       <button type="button" class="tc-card restriction wide tc-empty" id="tripRestrictionCard">
         <span class="tc-kicker">Ближайшее ограничение</span>
@@ -942,8 +942,8 @@ window.addEventListener("unhandledrejection",function(e){
   piketQueueEarlyDiagnostic("unhandled_rejection",{message:message});
 });
 </script>
-<script src="assets/piket-core.js?v=2.0.36-079dac51"></script>
-<script src="assets/piket-schedules.js?v=2.0.36-079dac51"></script>
+<script src="assets/piket-core.js?v=2.0.38-b4f0a914"></script>
+<script src="assets/piket-schedules.js?v=2.0.38-b4f0a914"></script>
 <script>
 "use strict";
 (function(){
@@ -1454,7 +1454,7 @@ window.addEventListener("unhandledrejection",function(e){
   function scheduleRestrictionApplies(r){var through=activeThrough();return through==="chudovo"?(r.peregon==="Все участки"||r.peregon==="Горы - Петрозаводск"||r.peregon==="Волховстрой - Чудово"||r.peregon==="Чудово - Новгород"):(through==="vyborg"?(r.peregon==="Все участки"||isVyborgLeg(r.peregon)):(through==="dacha"?(r.peregon==="Все участки"||isDachaLeg(r.peregon)):inCtx(r)));}
   function scheduleRestrictionM(r,end){var start=metersOf(r.km,r.pk),value=end?(r.kmE!=null?metersOf(r.kmE,r.pkE):start+100):start,label=r.peregon==="Все участки"?state.ctx.peregon:r.peregon;if(activeThrough()==="chudovo"){if(label==="Чудово - Новгород")return 70000-value;if(label==="Волховстрой - Чудово")return 171000-value;if(label==="Горы - Петрозаводск")return value+46600;}return isVyborgLeg(state.ctx.peregon)&&label==="Выборг - Каменногорск"?128900+value:value;}
   function scheduleScale(value,a,b,x,y){var f=Math.max(0,Math.min(1,(value-a)/(b-a)));return x+f*(y-x);}
-  function scheduleLiveM(){if(!rt.tracking||rt.posM==null)return null;var through=activeThrough();if(through==="dacha"){if(rt.physicalM!=null&&state.ctx.peregon==="Д. Долг - Павлово")return rt.physicalM;if(rt.physicalM!=null&&state.ctx.peregon==="Павлово - Горы II путь")return scheduleScale(rt.physicalM,29807,33500,29200,34000);if(rt.physicalM!=null&&state.ctx.peregon==="Горы - Павлово I путь")return scheduleScale(rt.physicalM,28200,33500,29200,34000);if(state.ctx.peregon==="Горы - Петрозаводск")return rt.posM-8000;}if(through==="vyborg"&&state.ctx.peregon==="Выборг - Каменногорск")return 128900+rt.posM;if(through!=="chudovo")return rt.posM;if(state.ctx.peregon==="Чудово - Новгород")return 70000-rt.posM;if(state.ctx.peregon==="Волховстрой - Чудово")return 171000-rt.posM;if(state.ctx.peregon==="Горы - Петрозаводск")return rt.posM+46600;return null;}
+  function scheduleLiveM(){if(!rt.tracking||rt.posM==null||((typeof IS_MIRROR!=="undefined"&&IS_MIRROR)&&!rt.nativeSnapshot))return null;var through=activeThrough();if(through==="dacha"){if(rt.physicalM!=null&&state.ctx.peregon==="Д. Долг - Павлово")return rt.physicalM;if(rt.physicalM!=null&&state.ctx.peregon==="Павлово - Горы II путь")return scheduleScale(rt.physicalM,29807,33500,29200,34000);if(rt.physicalM!=null&&state.ctx.peregon==="Горы - Павлово I путь")return scheduleScale(rt.physicalM,28200,33500,29200,34000);if(state.ctx.peregon==="Горы - Петрозаводск")return rt.posM-8000;}if(through==="vyborg"&&state.ctx.peregon==="Выборг - Каменногорск")return 128900+rt.posM;if(through!=="chudovo")return rt.posM;if(state.ctx.peregon==="Чудово - Новгород")return 70000-rt.posM;if(state.ctx.peregon==="Волховстрой - Чудово")return 171000-rt.posM;if(state.ctx.peregon==="Горы - Петрозаводск")return rt.posM+46600;return null;}
   function scheduleLiveIndex(mapped,train){
     var key=train.number+":"+train.direction+":"+activeThrough(),schedulePos=scheduleLiveM();
     if(rt.scheduleProgressKey!==key){rt.scheduleProgressKey=key;rt.scheduleProgressIndex=0;rt.scheduleProgressStarted=false;}
@@ -1635,6 +1635,9 @@ window.addEventListener("unhandledrejection",function(e){
     }
     return metersOf(state.calib.km,state.calib.pk,state.calib.m)+(dirDown()?-1:1)*rt.odo;
   }
+  // Visible Android WebView is only a mirror of the Kotlin engine. Reading the
+  // browser odometer here returned the departure coordinate forever, so the speed
+  // order could remain highlighted at Petrozavodsk after the train had departed.
   function liveOfficialMeters(){
     if(typeof IS_MIRROR!=="undefined"&&IS_MIRROR&&rt.posM!=null)return +rt.posM;
     if(!rt.tracking&&rt.stoppedPositionM!=null&&rt.stoppedRoute===state.ctx.peregon&&rt.stoppedDirection===state.ctx.towards)return +rt.stoppedPositionM;
@@ -2760,8 +2763,8 @@ window.addEventListener("unhandledrejection",function(e){
       confEl.className="conf-dots"+(rt.fixQuality?(" q-"+rt.fixQuality):"");
     }
     var acwEl=$("#autoCalWarn"); if(acwEl) acwEl.style.display=rt.autoCalib?"block":"none";
-    updateScheduleLivePace(false);
     renderTripConsole();
+    updateScheduleLivePace(false);
   }
 
   function renderTripAdaptive(force){ var now=Date.now(),every=rt.thermalHot?5000:3000;
@@ -3062,9 +3065,14 @@ window.addEventListener("unhandledrejection",function(e){
 
   document.querySelectorAll(".nav button").forEach(function(b){ b.addEventListener("click",function(){ var v=b.getAttribute("data-v");
     document.querySelectorAll(".nav button").forEach(function(x){x.classList.toggle("on",x===b);}); document.querySelectorAll(".view").forEach(function(x){x.classList.remove("on");}); $("#v-"+v).classList.add("on"); if(v==="list")renderList(); }); });
-  $("#btnTrack").addEventListener("click",function(){
-    if(IS_MIRROR){ try{ if(window.Android&&window.Android.stopTracking)window.Android.stopTracking(); }catch(e){} stopMirror(); return; }
-    rt.tracking?stopTrack():startTrack();
+  $("#btnTrack").addEventListener("click",async function(){
+    if(IS_MIRROR||rt.tracking){
+      if(!await showConfirm("Остановить текущую поездку?",{okText:"Остановить",title:"Завершение поездки"}))return;
+      try{if(window.Android&&window.Android.logUiDiagnostic)window.Android.logUiDiagnostic("trip_stop_confirmed",JSON.stringify({native_session_id:rt.nativeSessionId||null,official_m:rt.posM,route:state.ctx.peregon,direction:state.ctx.towards}));}catch(e){}
+      if(IS_MIRROR){ try{ if(window.Android&&window.Android.stopTracking)window.Android.stopTracking(); }catch(e){} stopMirror(); return; }
+      stopTrack();return;
+    }
+    startTrack();
   });
 
   if("speechSynthesis"in window){ speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged=function(){speechSynthesis.getVoices();}; }
@@ -3140,8 +3148,8 @@ window.addEventListener("unhandledrejection",function(e){
     "СпбГл - Москва":{ tuda:null, obratno:null, pickTrain:true, idsTuda:["sap-spb-msk","last-spb-msk"], idsObratno:["sap-msk-spb","last-msk-spb"] },
     "Броневая - Луга":{ tuda:"last-luga", obratno:"last-luga" },
     "Горы - Петрозаводск":{ tuda:"last-dd-ptz", obratno:"last-ptz-dd", note:"Координаты пути у нас есть только от Гор — начало документа (Дача Долгорукова) физически дальше, туда не подскролит." },
-    "Д. Долг - Павлово":{ tuda:"last-dd-ptz", obratno:"last-dd-ptz" },
-    "Павлово - Горы II путь":{ tuda:"last-dd-ptz", obratno:"last-dd-ptz" },
+    "Д. Долг - Павлово":{ tuda:"last-dd-ptz", obratno:"last-ptz-dd" },
+    "Павлово - Горы II путь":{ tuda:"last-dd-ptz", obratno:"last-ptz-dd" },
     "Горы - Павлово I путь":{ tuda:"last-ptz-dd", obratno:"last-ptz-dd" },
     "СПбФин - Выборг":{ tuda:"last-spbfin-kamenn", obratno:"last-kamenn-spbfin" },
     "Выборг - Каменногорск":{ tuda:"last-spbfin-kamenn", obratno:"last-kamenn-spbfin" },
@@ -3166,6 +3174,8 @@ window.addEventListener("unhandledrejection",function(e){
       if(!positions.length&&stationM!=null)positions=[stationM];
       var lo=positions.length?Math.min.apply(null,positions):null,hi=positions.length?Math.max.apply(null,positions):null;
       var entry=positions.length?(reverse?hi:lo):null,progress=entry==null?null:(reverse?-entry:entry);
+      // Some station captions and the following "from km" row overlap by 100–200 m.
+      // Preserve the document order instead of jumping back to the station caption.
       if(progress!=null){progress=Math.max(progress,lastProgress+.01);lastProgress=progress;}
       rows.push({rr:rr,index:seq++,positions:positions,stationM:stationM,lo:lo,hi:hi,progress:progress});
     });});
@@ -3198,6 +3208,8 @@ window.addEventListener("unhandledrejection",function(e){
     $("#srSub").textContent="Выписка из приказа ОКТ-10 + ОКТ-54 от 29.06.2026. Перенесено вручную — сверь с бланком.";
     var rowSeq=0;
     function grp(title,rows){
+      // Названия станций без цифр получают координату из той же таблицы станций, что
+      // использует перегонное время хода. Диапазоны из приказа остаются приоритетнее.
       var withKm=rows.map(function(rr){
         var positions=speedPositionsFromName(rr.name),stationM=positions.length?null:stationPositionForSpeedRow(r.id,rr.name);
         if(!positions.length&&stationM!=null)positions=[stationM];
@@ -3217,7 +3229,7 @@ window.addEventListener("unhandledrejection",function(e){
     updateSpeedPositionLabel(jumpM);
     if(jumpM!=null) highlightSpeedRefRow(jumpM,true); }
 
-  function updateSpeedPositionLabel(m){var el=$("#srPosition");if(!el)return;if(m==null){el.classList.remove("on");el.textContent="";return;}el.classList.add("on");el.textContent="Текущая позиция: "+kmFrom(m)+" км "+pkFrom(m)+" пк "+meterInPk(m)+" м · активная строка ниже";}
+  function updateSpeedPositionLabel(m){var el=$("#srPosition");if(m==null){el.classList.remove("on");el.textContent="";return;}el.classList.add("on");el.textContent="Текущая позиция: "+kmFrom(m)+" км "+pkFrom(m)+" пк "+meterInPk(m)+" м · активная строка ниже";}
   function highlightSpeedRefRow(positionM,scroll){ var box=$("#speedRefBox"),active=activeSpeedOrder(rt.srRouteId,positionM),nearestEl=active?box.querySelector('.srRow[data-seq="'+active.index+'"]'):null;
     var prev=box.querySelector(".srHit"); if(prev&&prev!==nearestEl)prev.classList.remove("srHit");
     if(nearestEl){nearestEl.classList.add("srHit");nearestEl.setAttribute("aria-current","location");if(prev&&prev!==nearestEl)prev.removeAttribute("aria-current");if(scroll)setTimeout(function(){ nearestEl.scrollIntoView({block:"center"}); },80);}
