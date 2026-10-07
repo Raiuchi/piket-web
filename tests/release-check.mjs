@@ -46,6 +46,10 @@ check('settings keep the requested operational order and speed-order title', set
 check('wipe restrictions belongs to the restrictions list', !settingsHtml.includes('id="btnWipe"') && listHtml.indexOf('id="btnWipe"') > listHtml.indexOf('id="listBox"'));
 check('wipe restrictions is visible only for a non-empty list', source.includes('id="wipeCard" style="padding:14px;display:none"') && source.includes('$("#wipeCard").style.display=arr.length?"block":"none"'));
 check('trip screen combines order speed timetable and nearest restriction', source.includes('id="tripConsole"') && source.includes('id="tripOrderCard"') && source.includes('id="tripScheduleCard"') && source.includes('id="tripRestrictionCard"') && source.includes('function renderTripConsole()') && source.includes('renderTripConsole();'));
+check('trip screen shows current and next order speeds separately', source.includes('id="tripOrderNextSpeed"') && source.includes('id="tripOrderNextName"') && source.includes('id="tripOrderNextMark"'));
+check('overlapping restriction announcements are queued', source.includes('function drainAlertQueue()') && source.includes('rt.alertQueue.push'));
+check('every linked speed-order route exposes main and side path selection', source.includes('trackPick.style.display=routeId?"block":"none"') && source.includes('label:"Боковой путь"'));
+check('Luga selects the order group for its travel direction', source.includes('routeId==="last-luga"') && source.includes('/Путь II/i:/Путь I/i'));
 check('speed order follows exact kilometer and picket sequentially', source.includes('function speedPositionsFromName') && source.includes('function stationPositionForSpeedRow') && source.includes('function activeSpeedOrder') && source.includes('candidate.pathIndex>=rt.speedOrderIndex') && source.includes('highlightSpeedRefRow(m,false)'));
 
 const manifest = JSON.parse(read('manifest.json'));
