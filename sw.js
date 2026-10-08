@@ -1,9 +1,9 @@
-const CACHE_VERSION = 'piket-web-v2.0.41-40969624';
+const CACHE_VERSION = 'piket-web-v2.0.42-344b95c4';
 const APP_SHELL = [
   './',
   './index.html',
-  './assets/piket-core.js?v=2.0.41-40969624',
-  './assets/piket-schedules.js?v=2.0.41-40969624',
+  './assets/piket-core.js?v=2.0.42-344b95c4',
+  './assets/piket-schedules.js?v=2.0.42-344b95c4',
   './manifest.json',
   './assets/fonts/manrope-cyrillic.woff2',
   './assets/fonts/manrope-latin.woff2',
